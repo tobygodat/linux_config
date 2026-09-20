@@ -1,0 +1,7 @@
+# omarchy/omasettings/hyprland scatter timestamped backups next to configs
+*.bak
+*.bak.*
+*.omasettings.bak
+
+# nvim runtime state
+config/nvim/.netrwhist

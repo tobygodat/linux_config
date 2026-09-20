@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "tobygodat.usage",
+  "name": "AI Usage",
+  "version": "0.1.0",
+  "author": "Toby Godat",
+  "description": "Claude and Codex plan usage: every rate-limit window with its reset time and pace. Data comes from the bundled usage-fetch script, which reads the official CLIs' logins. Toggle with: omarchy-shell shell toggle tobygodat.usage",
+  "kinds": [
+    "panel"
+  ],
+  "entryPoints": {
+    "panel": "Panel.qml"
+  },
+  "keepLoaded": true
+}

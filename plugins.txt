@@ -1,0 +1,9 @@
+# Third-party Omarchy shell plugins. Cloned by bootstrap.sh into
+# ~/.config/omarchy/plugins/ rather than vendored here -- they are upstream
+# git repos (57 MB combined, mostly lock-screen videos).
+#
+# <plugin-id> <clone-url>
+expose.window-overview              https://github.com/kristofferR/omarchy-expose.git
+io.github.sirjul1337.lock-explorer  https://github.com/SirJul1337/omarchy-lock-explorer.git
+io.github.thisisgm.omapods          https://github.com/thisisgm/omarchy-pods
+io.github.twiking.omasettings        https://github.com/twiking/omasettings.git

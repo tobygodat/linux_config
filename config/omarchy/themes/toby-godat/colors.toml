@@ -1,0 +1,39 @@
+# Toby Godat design system: dark theme
+# "warm paper, one serif, one green, rules instead of boxes"
+
+mode = "dark"
+
+# accent means "here": focused window, selected item, cursor line marker
+accent = "#8fd18a"
+selection = "#4a463f"
+muted = "#7d7972"
+
+background = "#1b1a19"
+dark_background = "#141413"
+darker_background = "#0e0d0c"
+lighter_background = "#252422"
+
+foreground = "#e8e5df"
+dark_foreground = "#5a5752"
+light_foreground = "#a39e96"
+bright_foreground = "#f4f1eb"
+
+# window borders: accent on the focused window, hairline on the rest
+hyprland_active_border = "#8fd18a"
+hyprland_inactive_border = "#3b3936"
+
+red = "#e8907c"
+yellow = "#e0b565"
+orange = "#e3a072"
+green = "#8fd18a"
+cyan = "#84c9b8"
+blue = "#8fb4d6"
+magenta = "#cfa0c6"
+brown = "#8a6446"
+
+bright_red = "#eda696"
+bright_yellow = "#e6c484"
+bright_green = "#a5daa1"
+bright_cyan = "#9dd4c6"
+bright_blue = "#a5c3de"
+bright_magenta = "#d9b3d1"

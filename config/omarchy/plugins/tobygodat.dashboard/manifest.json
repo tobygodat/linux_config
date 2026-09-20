@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "tobygodat.dashboard",
+  "name": "Dashboard",
+  "version": "0.1.0",
+  "author": "Toby Godat",
+  "description": "One glanceable card: clock, weather, calendar, now playing and system meters. Layout idea from caelestia-dots/shell, rebuilt on Omarchy's Style and Ui so it follows the active theme. Toggle with: omarchy-shell shell toggle tobygodat.dashboard",
+  "kinds": [
+    "panel"
+  ],
+  "entryPoints": {
+    "panel": "Panel.qml"
+  },
+  "keepLoaded": true
+}

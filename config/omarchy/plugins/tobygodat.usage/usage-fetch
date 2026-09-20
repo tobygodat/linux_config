@@ -1,0 +1,196 @@
+#!/usr/bin/env bash
+# Claude and Codex plan usage as one JSON document on stdout.
+#
+# Reads the OAuth access tokens the official CLIs already keep on disk
+# (~/.claude/.credentials.json, ~/.codex/auth.json) and asks each vendor's own
+# usage endpoint. Read-only by design: tokens are never refreshed or written
+# back, because both CLIs rotate their refresh tokens and a second writer can
+# log them out. An expired token just means the last good answer is served
+# with "stale": true until `claude` / `codex` is next run.
+#
+#   usage-fetch            serve the cache when it is younger than the TTL
+#   usage-fetch --force    always ask the network
+#
+# Env: USAGE_TTL (seconds, default 120), USAGE_TIMEOUT (seconds, default 8)
+
+set -u
+
+ttl="${USAGE_TTL:-120}"
+timeout="${USAGE_TIMEOUT:-8}"
+force=0
+[ "${1:-}" = "--force" ] && force=1
+
+cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/tobygodat-usage"
+mkdir -p "$cache_dir"
+chmod 700 "$cache_dir"
+
+claude_creds="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/.credentials.json"
+codex_auth="${CODEX_HOME:-$HOME/.codex}/auth.json"
+
+now=$(date +%s)
+
+# One fetch at a time; the bar pill and the panel may ask together.
+exec 9>"$cache_dir/.lock"
+flock -w 15 9 || true
+
+fresh() {
+  [ "$force" -eq 0 ] && [ -s "$1" ] && [ $((now - $(stat -c %Y "$1"))) -lt "$ttl" ]
+}
+
+# get <url> <raw-file>, headers on stdin so the token never reaches argv.
+# Leaves the previous raw file alone unless the answer is a 200 with JSON.
+get() {
+  local url="$1" out="$2" tmp code
+  tmp=$(mktemp "$cache_dir/.tmp.XXXXXX")
+  code=$(curl -sS -m "$timeout" -o "$tmp" -w '%{http_code}' -H @- "$url" 2>/dev/null) || code="000"
+  if [ "$code" = "200" ] && jq -e . "$tmp" >/dev/null 2>&1; then
+    mv -f "$tmp" "$out"
+    echo ok
+  else
+    rm -f "$tmp"
+    echo "$code"
+  fi
+}
+
+problem() {
+  case "$1" in
+    ok) echo "" ;;
+    401|403) echo "token rejected, run \`$2\` to sign in again" ;;
+    429) echo "rate limited" ;;
+    000) echo "offline" ;;
+    *) echo "http $1" ;;
+  esac
+}
+
+# ---- Claude ---------------------------------------------------------------
+
+claude_raw="$cache_dir/claude.json"
+claude_error=""
+claude_plan=""
+if [ -r "$claude_creds" ]; then
+  claude_plan=$(jq -r '.claudeAiOauth | [.subscriptionType // "", .rateLimitTier // ""] | join(" ")' "$claude_creds" 2>/dev/null)
+  if ! fresh "$claude_raw"; then
+    expires=$(jq -r '.claudeAiOauth.expiresAt // 0' "$claude_creds" 2>/dev/null)
+    if [ "$((expires / 1000))" -le "$now" ]; then
+      claude_error="token expired, run \`claude\` to renew it"
+    else
+      status=$(jq -r '.claudeAiOauth.accessToken // empty
+          | "Authorization: Bearer \(.)\nanthropic-beta: oauth-2025-04-20\nAccept: application/json\nUser-Agent: tobygodat-usage/1"' "$claude_creds" \
+        | get "https://api.anthropic.com/api/oauth/usage" "$claude_raw")
+      claude_error=$(problem "$status" claude)
+    fi
+  fi
+else
+  claude_error="not signed in, run \`claude\`"
+fi
+
+# ---- Codex ----------------------------------------------------------------
+
+codex_raw="$cache_dir/codex.json"
+codex_error=""
+if [ -r "$codex_auth" ]; then
+  if ! fresh "$codex_raw"; then
+    status=$(jq -r '.tokens | select(.access_token != null)
+        | "Authorization: Bearer \(.access_token)\nChatGPT-Account-Id: \(.account_id // "")\nAccept: application/json\nUser-Agent: tobygodat-usage/1"' "$codex_auth" \
+      | get "https://chatgpt.com/backend-api/wham/usage" "$codex_raw")
+    codex_error=$(problem "$status" "codex login")
+  fi
+else
+  codex_error="not signed in, run \`codex login\`"
+fi
+
+# ---- Shape ----------------------------------------------------------------
+
+mtime() { [ -s "$1" ] && stat -c %Y "$1" || echo 0; }
+slurp() { [ -s "$1" ] && cat "$1" || echo null; }
+
+# The last document is kept so the bar pill can draw at once after a bar
+# rebuild instead of waiting for this script.
+out=$(mktemp "$cache_dir/.tmp.XXXXXX")
+jq -n \
+  --argjson now "$now" \
+  --argjson claude "$(slurp "$claude_raw")" --argjson claude_at "$(mtime "$claude_raw")" \
+  --arg claude_error "$claude_error" --arg claude_plan "$claude_plan" \
+  --argjson codex "$(slurp "$codex_raw")" --argjson codex_at "$(mtime "$codex_raw")" \
+  --arg codex_error "$codex_error" '
+
+  def span: if . <= 0 then "now"
+    else (. / 86400 | floor) as $d | ((. % 86400) / 3600 | floor) as $h | ((. % 3600) / 60 | floor) as $m
+    | if $d > 0 then "\($d)d \($h)h" elif $h > 0 then "\($h)h \($m)m" else "\($m)m" end end;
+
+  def epoch: if type == "number" then .
+    elif type == "string" then (sub("\\.[0-9]+"; "") | sub("\\+00:00$"; "Z") | fromdateiso8601)
+    else null end;
+
+  # label, percent used, reset (epoch or null), window seconds (or null)
+  def metric($label; $percent; $reset; $window):
+    ($percent // 0) as $p
+    | ($reset | epoch) as $r
+    | (if $r then $r - $now else null end) as $left
+    | (if $left != null and $window then (100 * (1 - $left / $window) | if . < 0 then 0 elif . > 100 then 100 else . end | round) else null end) as $elapsed
+    | {
+        label: $label,
+        percent: ($p | round),
+        value: "\($p | round)%",
+        reset_at: $r,
+        resets_in: (if $left != null then ($left | span) else null end),
+        elapsed: $elapsed,
+        # Burning faster than the clock: used share minus elapsed share.
+        pace: (if $elapsed != null then (($p | round) - $elapsed) else null end),
+        severity: (if $p >= 90 then "critical" elif $p >= 75 then "high" else "normal" end)
+      };
+
+  def claude_plan_name:
+    if test("max.*20x"; "i") then "claude max 20x"
+    elif test("max.*5x"; "i") then "claude max 5x"
+    elif test("^max"; "i") then "claude max"
+    elif test("^pro"; "i") then "claude pro"
+    elif test("^team"; "i") then "claude team"
+    elif test("^enterprise"; "i") then "claude enterprise"
+    else (split(" ")[0] // "" | ascii_downcase) end;
+
+  def claude_metrics:
+    if . == null then []
+    elif (.limits | type) == "array" and (.limits | length) > 0 then
+      [ .limits[]
+        | (if .kind == "session" then ["session", 18000]
+           elif .kind == "weekly_all" then ["weekly", 604800]
+           else [((.scope.model.display_name // .scope.surface // .kind) | ascii_downcase), 604800] end) as $k
+        | metric($k[0]; .percent; .resets_at; $k[1]) ]
+    else
+      [ (.five_hour | select(. != null) | metric("session"; .utilization; .resets_at; 18000)),
+        (.seven_day | select(. != null) | metric("weekly"; .utilization; .resets_at; 604800)),
+        (.seven_day_opus | select(. != null) | metric("opus"; .utilization; .resets_at; 604800)),
+        (.seven_day_sonnet | select(. != null) | metric("sonnet"; .utilization; .resets_at; 604800)) ]
+    end;
+
+  def window_label: if . == null then "window"
+    elif . <= 21600 then "session" elif . <= 90000 then "daily"
+    elif . <= 691200 then "weekly" else "monthly" end;
+
+  def codex_metrics:
+    if . == null then []
+    else
+      [ (.rate_limit // {} | .primary_window, .secondary_window | select(. != null)
+          | metric(.limit_window_seconds | window_label; .used_percent; .reset_at; .limit_window_seconds)),
+        (.code_review_rate_limit // {} | .primary_window? | select(. != null)
+          | metric("code review"; .used_percent; .reset_at; .limit_window_seconds)) ]
+    end;
+
+  def entry($id; $name; $plan; $raw_at; $error; $metrics):
+    { id: $id, display_name: $name, plan: $plan, metrics: $metrics,
+      fetched_at: $raw_at,
+      stale: ($error != "" and $raw_at > 0),
+      error: (if $error == "" then null else $error end) };
+
+  {
+    generated_at: $now,
+    entries: [
+      entry("anthropic"; "Claude"; ($claude_plan | claude_plan_name); $claude_at; $claude_error; ($claude | claude_metrics)),
+      entry("openai"; "Codex";
+        (if $codex and $codex.plan_type then "chatgpt \($codex.plan_type)" else "" end);
+        $codex_at; $codex_error; ($codex | codex_metrics)
+      ) + { resets_available: ($codex.rate_limit_reset_credits.available_count? // 0) }
+    ]
+  }' > "$out" && mv -f "$out" "$cache_dir/last.json"
+cat "$cache_dir/last.json"

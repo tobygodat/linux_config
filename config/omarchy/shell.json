@@ -1,0 +1,115 @@
+{
+  "bar": {
+    "centerAnchor": "center",
+    "layout": {
+      "left": [
+        {
+          "id": "omarchy.menu"
+        },
+        {
+          "id": "ws",
+          "type": "qml"
+        },
+        {
+          "id": "divider",
+          "type": "qml"
+        },
+        {
+          "id": "io.github.twiking.omasettings"
+        },
+        {
+          "id": "usage",
+          "type": "qml"
+        }
+      ],
+      "center": [
+        {
+          "id": "center",
+          "type": "qml"
+        }
+      ],
+      "right": [
+        {
+          "id": "pill-status",
+          "type": "qml",
+          "source": "/home/tobygodat/.config/omarchy/bar/modules/group.qml",
+          "reveal": true
+        },
+        {
+          "hidden": [],
+          "id": "omarchy.tray",
+          "pinned": [
+            "Claude_status_icon_1",
+            "chrome_status_icon_1"
+          ]
+        },
+        {
+          "id": "omarchy.indicators"
+        },
+        {
+          "id": "io.github.thisisgm.omapods"
+        },
+        {
+          "id": "omarchy.system-update"
+        },
+        {
+          "id": "omarchy.keyboard-layout"
+        },
+        {
+          "id": "omarchy.tailscale"
+        },
+        {
+          "id": "omarchy.agents"
+        },
+        {
+          "id": "omarchy.network"
+        },
+        {
+          "id": "omarchy.bluetooth"
+        },
+        {
+          "id": "omarchy.audio"
+        },
+        {
+          "id": "omarchy.monitor"
+        },
+        {
+          "id": "omarchy.power",
+          "showPercentage": true
+        },
+        {
+          "id": "session",
+          "type": "qml"
+        }
+      ]
+    },
+    "position": "top",
+    "transparent": false
+  },
+  "idle": {
+    "lock": 300,
+    "screensaver": 150
+  },
+  "plugins": [
+    {
+      "id": "tobygodat.dashboard"
+    },
+    {
+      "id": "expose.window-overview"
+    },
+    {
+      "id": "tobygodat.usage"
+    },
+    {
+      "id": "io.github.sirjul1337.lock-explorer",
+      "design": "calendar"
+    }
+  ],
+  "version": 1,
+  "disabledPlugins": [
+    "omarchy.lock"
+  ],
+  "cloneSourceRestores": [
+    "io.github.sirjul1337.lock-explorer"
+  ]
+}

@@ -1,0 +1,10 @@
+[bar]
+# Wider than stock (28) so the vertical bar has room for app icons and a
+# running window title.
+background       = "#f4f1eb"
+background-alpha = 1.0
+text             = "#1b1a19"
+active           = "#a63d2a"
+scale-with-font  = true
+size-horizontal  = 34
+size-vertical    = 40

@@ -1,0 +1,29 @@
+[controls]
+# Words and borders, no fills. Hover turns the word green; focus is a solid
+# accent outline; the selected item gets a 2px accent line under it.
+normal-color        = "#e8e5df"
+normal-fill-alpha   = 0.0
+normal-border       = "#7d7972"
+normal-border-width = 1
+normal-border-alpha = 1.0
+
+hover-cursor-color        = "#8fd18a"
+hover-cursor-fill-alpha   = 0.0
+hover-cursor-border       = "#7d7972"
+hover-cursor-border-width = 1
+hover-cursor-border-alpha = 1.0
+
+focus-color        = "#e8e5df"
+focus-fill-alpha   = 0.0
+focus-border       = "#8fd18a"
+focus-border-width = 2
+focus-border-alpha = 1.0
+
+selected-color        = "#e8e5df"
+selected-fill-alpha   = 0.0
+selected-border       = "#8fd18a"
+selected-border-width = "0 0 2 0"
+selected-border-alpha = 1.0
+
+pressed-fill-alpha   = 0.0
+selection-fill-alpha = 1.0
