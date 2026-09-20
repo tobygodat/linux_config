@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=iPhone Mirror
+Comment=Start or focus the iPhone mirror with automatic connection selection
+Exec="/home/tobygodat/.local/bin/iphone-mirror" start --connection auto
+Icon=phone
+Terminal=false
+Categories=Utility;
+StartupNotify=false

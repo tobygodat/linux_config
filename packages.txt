@@ -1,6 +1,5 @@
 1password-cli
 aether
-ai-usagebar-bin
 alsa-utils
 asdcontrol
 base
@@ -49,7 +48,6 @@ git
 gnome-disk-utility
 gnome-keyring
 gnome-themes-extra
-google-chrome
 gpu-screen-recorder
 grim
 gst-plugin-pipewire
@@ -104,8 +102,8 @@ noto-fonts
 noto-fonts-cjk
 noto-fonts-emoji
 nss-mdns
-obs-studio
 obsidian
+obs-studio
 omacalc
 omacut
 omarchy

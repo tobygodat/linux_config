@@ -1,0 +1,10 @@
+[tools]
+claude = "latest"
+codex = "latest"
+gh = "latest"
+java = "latest"
+node = "latest"
+python = "latest"
+
+[settings.upgrade]
+auto_prune = false

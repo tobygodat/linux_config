@@ -5,3 +5,8 @@
 
 # nvim runtime state
 config/nvim/.netrwhist
+
+# AirPodsTrayApp.conf holds Bluetooth pairing material (magicAccIRK,
+# magicAccEncKey). The IRK resolves the device's randomized BLE address, so
+# it must not be published. Pair the desktop separately.
+config/AirPodsTrayApp/

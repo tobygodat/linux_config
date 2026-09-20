@@ -42,22 +42,43 @@ them and waiting will look like nothing happened.
 ## Layout
 
 ```
-config/          mirrors ~/.config/
-  hypr/            keybinds, looknfeel, input, autostart, startup-apps.sh
+config/            mirrors ~/.config/
+  hypr/              keybinds, looknfeel, input, autostart, startup-apps.sh
   omarchy/
-    shell.json       bar layout, idle timers, enabled plugins
-    bar/modules/     9 custom QML bar modules
-    plugins/         tobygodat.dashboard, tobygodat.usage (mine)
-    themes/          toby-godat, toby-godat-light
-    backgrounds/     wallpapers (~28 MB)
-    hooks/           post-update hooks
+    shell.json         bar layout, idle timers, enabled plugins
+    bar/modules/       9 custom QML bar modules
+    plugins/           tobygodat.dashboard, tobygodat.usage (mine)
+    themes/            toby-godat, toby-godat-light
+    backgrounds/       wallpapers (~28 MB)
+    hooks/             post-update hooks
+  mise/              toolchain: claude, codex, gh, java, node, python
   alacritty/ foot/ kitty/ ghostty/ btop/ lazygit/ git/ fish/ nvim/
+local/share/       mirrors ~/.local/share/
+  applications/      21 app launchers -- web apps and TUIs
+  icons/             their icons
 hosts/
-  tobylinux/       laptop monitors.lua
-  example/         template for a new machine
-packages.txt     pacman -Qqe
-plugins.txt      third-party plugin clone URLs
+  tobylinux/         laptop monitors.lua
+  example/           template for a new machine
+packages.txt       official-repo packages (183)
+packages-aur.txt   AUR packages (3) -- need omarchy pkg aur add
+plugins.txt        third-party plugin clone URLs
 ```
+
+## Where the apps actually come from
+
+`pacman -Qqe` does **not** describe this desktop. Of the 21 launchers in
+`~/.local/share/applications/`, none belong to a package:
+
+- **Web apps** (Basecamp, Discord, Google Contacts/Maps/Messages/Photos, HEY,
+  WhatsApp, X, YouTube, Zoom, Tailscale) are `.desktop` files written by
+  `omarchy webapp install`. They're plain text wrapping
+  `omarchy-launch-webapp <url>` — synced here directly, which is why
+  `sync.sh apply` is what brings the apps over, not `bootstrap.sh`'s pacman step.
+- **TUI launchers** (Docker, Disk Usage) come from `omarchy tui install`.
+- **CLI tools** (claude, codex, gh, node, python, java) are mise-managed;
+  `config/mise/config.toml` declares them and `mise install` fetches them.
+- `~/.local/bin/*` are omarchy's mise shims and get recreated by a fresh
+  Omarchy install, so they aren't tracked here.
 
 ## Deliberately not in here
 
@@ -69,6 +90,8 @@ plugins.txt      third-party plugin clone URLs
 | `hooks/post-update.d/setup-fingerprint.hook` | Laptop hardware only. |
 | `~/.local/share/wireplumber` override | Works around the laptop's ipu7 camera stalling WirePlumber. No ipu7 on a desktop. |
 | `~/.config/{1Password,Bitwarden,gh,Claude,Codex}` | Credentials. |
+| `~/.config/AirPodsTrayApp/` | Holds `magicAccIRK` and `magicAccEncKey` — Bluetooth pairing material. The IRK resolves the AirPods' randomized BLE address, so publishing it is a tracking risk. Pair each machine separately. |
+| `~/.local/bin/` | mise shims, recreated by a fresh Omarchy install. `librepods` and `iphone-mirror` are the exceptions — see bootstrap step 4. |
 | `*.bak.*` files | Churn from omarchy-refresh and the omasettings plugin. Gitignored. |
 
 ## Gotchas
@@ -83,6 +106,10 @@ plugins.txt      third-party plugin clone URLs
   plugin rewrite these files by replacing them, which turns a symlink back into
   a regular file and silently detaches it from the repo. Hence explicit
   `pull`/`apply`.
-- **`packages.txt` is `-Qqe`**, so it includes AUR packages that plain `pacman
-  -S` can't resolve. `bootstrap.sh` reports the failures; install those with
-  `omarchy pkg aur add <name>`.
+- **Packages are split by origin.** `packages.txt` is the official-repo set
+  (`pacman -S`); `packages-aur.txt` is the foreign set from `pacman -Qqm`
+  (`ai-usagebar-bin`, `google-chrome`, `tether-bin-debug`), which needs
+  `omarchy pkg aur add`. `sync.sh pull` regenerates both.
+- **`librepods` isn't packaged.** It's a hand-installed binary in
+  `~/.local/bin`. Both the OpenPods launcher and the `omapods` bar plugin are
+  dead without it.
